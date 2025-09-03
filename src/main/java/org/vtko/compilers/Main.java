@@ -1,8 +1,11 @@
 package org.vtko.compilers;
 
+import org.vtko.compilers.expressions.Expression;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -12,7 +15,12 @@ public class Main {
         Lexer lexer = new Lexer();
         TokenStream tokenStream = lexer.scanTokens(source);
 
-        System.out.println(tokenStream.getTokens());
+        Parser parser = new Parser();
+        List<Expression> expressions = parser.parseTokens(tokenStream);
+
+        for(Expression expr : expressions) {
+            System.out.println(expr.toString());
+        }
     }
 
     static String readFile(String filepath) {

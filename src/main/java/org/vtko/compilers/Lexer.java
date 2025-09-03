@@ -31,6 +31,7 @@ public class Lexer {
         this.source = source;
 
         while (!isAtEnd()) {
+            this.start = this.end;
             this.scanToken();
         }
 
@@ -82,14 +83,68 @@ public class Lexer {
                 break;
             }
 
+            case '-': {
+                makeToken(TokenType.Minus);
+                break;
+            }
+
+            case '+': {
+                makeToken(TokenType.Plus);
+                break;
+            }
+
+            case '*': {
+                makeToken(TokenType.Star);
+                break;
+            }
+
+            case '/': {
+                makeToken(TokenType.Slash);
+                break;
+            }
+
+            case '"': {
+                string();
+                break;
+            }
+
             default: {
-                if (isAlpha(c)) {
+                if (isDigit(c)) {
+                    number();
+                } else if (isAlpha(c)) {
                     identifier();
                 } else {
                     throw new RuntimeException("Invalid character '" + c + "', at line " + line + ".");
                 }
             }
         }
+    }
+
+    private void string() {
+        while(!isAtEnd() && peek() != '"') {
+            if(peek() == '\n') {
+                line++;
+            }
+            advance();
+        }
+
+        if(peek() != '"') {
+            throw new RuntimeException("Unterminated string at line " + line);
+        }
+
+        advance();
+
+        String lexeme = source.substring(start + 1, end - 1);
+        makeToken(TokenType.STRING, lexeme, lexeme);
+    }
+
+    private void number() {
+        while (!isAtEnd() && isDigit(peek()))
+            advance();
+
+        String lexeme = source.substring(this.start, this.end);
+        Object literal = Double.parseDouble(lexeme);
+        makeToken(TokenType.Number, lexeme, literal);
     }
 
     void identifier() {
@@ -109,23 +164,16 @@ public class Lexer {
 
     Token makeToken(TokenType type) {
         String lexeme = this.source.substring(this.start, this.end);
-        this.start = this.current;
-        return this.makeToken(lexeme, type, null);
+        return this.makeToken(type, lexeme, null);
     }
 
-    Token makeToken(TokenType type, Object literal) {
-        String lexeme = this.source.substring(this.start, this.end);
-        this.start = this.current;
-
-        return this.makeToken(lexeme, type, literal);
+    Token makeToken(TokenType type, String lexeme) {
+        return this.makeToken(type, lexeme, null);
     }
 
-    Token makeToken(String lexeme, TokenType type, Object literal) {
+    Token makeToken(TokenType type, String lexeme, Object literal) {
         Token token = new Token(type, lexeme, literal, line);
         this.tokens.add(token);
-
-        this.start = this.end;
-
         return token;
     }
 
@@ -141,6 +189,7 @@ public class Lexer {
     }
 
     char peek() {
+        if(isAtEnd()) return '\0';
         return this.source.charAt(this.end);
     }
 
